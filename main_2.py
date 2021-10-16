@@ -36,7 +36,3 @@ for i in range(n):
     else:
         next_id = i+1
     players[i] = player(l, i, next_id, i-1)
-
-for i in range(k):
-    for pl in players:
-        pass
