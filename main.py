@@ -147,19 +147,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Обновление
-    sprites.update()
-    # Рендеринг
-    screen.fill(GrAY)
-    sprites.draw(screen)
-    # После отрисовки всего, переворачиваем экран
-    pygame.display.flip()
+    pg_update()
 
     if cyber_move-1 != k:
         text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move) 
         cities[current].picked = True
         cities[previous].picked = False
-
+        
         pg_update()
 
         defence = int(input("Игрок "+str(current)+" в оборону:"))
@@ -173,12 +167,8 @@ while running:
             cyber_move += 1
     else:
         text.text = "Ходы закончились"
-    sprites.update()
-    # Рендеринг
-    screen.fill(GrAY)
-    sprites.draw(screen)
-    # После отрисовки всего, переворачиваем экран
-    pygame.display.flip()
+
+    pg_update()
 
 
 
