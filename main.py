@@ -23,17 +23,19 @@ green_dark = (20,100,30)
 
 iter = 0
 last_iter = -1
-
-r = (HEIGHT//2)-37
 center = np.array([(HEIGHT-20)//2, (HEIGHT-20)//2])
+r = (HEIGHT//2)-37
 
 class pg_city(pygame.sprite.Sprite):
-    def __init__(self, money, id, center, next_id, prev_id):
+    def __init__(self, money, id, center, next_id, prev_id, is_last=False):
         self.money = money
         self.id = id
         self.next_id = next_id
         self.prev_id = prev_id
         self.picked = False
+        self.is_last = is_last 
+        self.points = 0
+        
 
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.SysFont("Arial", 35)
@@ -97,7 +99,7 @@ clock = pygame.time.Clock()
 
 sprites = pygame.sprite.Group()
 circle_ = cirlce()
-text = main_text(400, 60, WIDTH/2, HEIGHT/3)
+text = main_text(500, 60, WIDTH/2, HEIGHT/3)
 sprites.add(circle_, text)
 
 ang = 360 / n
@@ -108,22 +110,37 @@ cities = []
 for i in range(n):
     if i+2 > n:
         next_id = 0
+        is_last = True
     else:
         next_id = i+1
+        is_last = False
 
     centre = np.array([r*cos(np.deg2rad(angle)), r*sin(np.deg2rad(angle))]) + np.array([WIDTH//2, HEIGHT//2])
 
-    cities.append(pg_city(id=i, center=centre, money=l, next_id=next_id, prev_id=i-1))
+    cities.append(pg_city(id=i, center=centre, money=l, next_id=next_id, prev_id=i-1, is_last=is_last))
     sprites.add(cities[i])
     angle += ang
 
+cities[0].picked = True
+for city in cities:
+    print("id:",city.id, "last:", city.is_last)
+
+def pg_update():
+    sprites.update()
+    screen.fill(GrAY)
+    sprites.draw(screen)
+    pygame.display.flip()
 # Цикл игры
 running = True
+cyber_move = 1
 current = 0
 previous = -1
+
+
+
 while running:
     # Держим цикл на правильной скорости
-    clock.tick(1)
+    clock.tick(30)
     # Ввод процесса (события)
     for event in pygame.event.get():
         # check for closing window
@@ -131,17 +148,39 @@ while running:
             running = False
 
     # Обновление
-    text.text = "Ход игрока: "+str(current) 
-    cities[current].picked = True
-    cities[previous].picked = False
-    previous = current
-    current = cities[current].next_id
-
     sprites.update()
     # Рендеринг
     screen.fill(GrAY)
     sprites.draw(screen)
     # После отрисовки всего, переворачиваем экран
     pygame.display.flip()
+
+    if cyber_move-1 != k:
+        text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move) 
+        cities[current].picked = True
+        cities[previous].picked = False
+
+        pg_update()
+
+        defence = int(input("Игрок "+str(current)+" в оборону:"))
+        attack = int(input("Игрок "+str(current)+" в атаку:"))
+
+
+        previous = current
+        current = cities[current].next_id
+
+        if current == 0:
+            cyber_move += 1
+    else:
+        text.text = "Ходы закончились"
+    sprites.update()
+    # Рендеринг
+    screen.fill(GrAY)
+    sprites.draw(screen)
+    # После отрисовки всего, переворачиваем экран
+    pygame.display.flip()
+
+
+
 
 pygame.quit()
