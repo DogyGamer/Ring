@@ -29,12 +29,15 @@ r = (HEIGHT//2)-37
 class pg_city(pygame.sprite.Sprite):
     def __init__(self, money, id, center, next_id, prev_id, is_last=False):
         self.money = money
+        self.points = 0
+        self.money_tospend = 0
+        self.attack = 0
+        self.defence = 0
         self.id = id
         self.next_id = next_id
         self.prev_id = prev_id
-        self.picked = False
         self.is_last = is_last 
-        self.points = 0
+        self.picked = False
         
 
         pygame.sprite.Sprite.__init__(self)
@@ -106,7 +109,6 @@ ang = 360 / n
 angle = 0
 cities = []
 
-
 for i in range(n):
     if i+2 > n:
         next_id = 0
@@ -146,24 +148,28 @@ while running:
         # check for closing window
         if event.type == pygame.QUIT:
             running = False
-
     pg_update()
-
     if cyber_move-1 != k:
         text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move) 
         cities[current].picked = True
         cities[previous].picked = False
-        
+
         pg_update()
 
-        defence = int(input("Игрок "+str(current)+" в оборону:"))
-        attack = int(input("Игрок "+str(current)+" в атаку:"))
+        cities[current].money_tospend = int(input("Игрок "+str(current)+" расходы на этот раунд:"))
+
+        cities[current].defence = int(input("Игрок "+str(current)+" в оборону:"))
+        cities[current].attack = int(input("Игрок "+str(current)+" в атаку:"))
 
 
         previous = current
         current = cities[current].next_id
 
         if current == 0:
+            for id in range(len(cities)):
+                prev = cities[id].prev_id
+                next = cities[id].next_id
+
             cyber_move += 1
     else:
         text.text = "Ходы закончились"
