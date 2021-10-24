@@ -42,12 +42,17 @@ class pg_city(pygame.sprite.Sprite):
 
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.SysFont("Arial", 35)
+        self.stat_font = pygame.font.SysFont("Arial", 12)
         self.textSurf = self.font.render(str(id), 2, GOLD)
+
+        self.image = pygame.Surface((200, 50))
+        self.image.fill(GrAY)
+        pygame.draw.rect(self.image, BLUE, (0,0,50,50))
+
         W = self.textSurf.get_width()
         H = self.textSurf.get_height()
-        self.image = pygame.Surface((50, 50))
-        self.image.fill(BLUE)
         self.image.blit(self.textSurf, [50/2 - W/2, 50/2 - H/2])
+
         self.rect = self.image.get_rect()
         self.rect.center = center
 
@@ -55,12 +60,42 @@ class pg_city(pygame.sprite.Sprite):
         W = self.textSurf.get_width()
         H = self.textSurf.get_height()
 
-        if(self.picked):
-            self.image.fill(GREEN)
-            self.image.blit(self.textSurf, [50/2 - W/2, 50/2 - H/2])
+        self.image.fill(GrAY)
+        
+        if(self.picked):   pygame.draw.rect(self.image, GREEN, (0,0,50,50))
+        else:              pygame.draw.rect(self.image, BLUE, (0,0,50,50))
+
+        self.draw_stats()
+        self.image.blit(self.textSurf, [50/2 - W/2, 50/2 - H/2])
+    def draw_stats(self):
+        self.stat_money = self.stat_font.render("money: "+str(self.money), 0.5, BLACK)
+        self.stat_atk = self.stat_font.render("atk: "+str(self.attack), 0.5, BLACK)
+        self.stat_def = self.stat_font.render("def: "+str(self.defence), 0.5, BLACK)
+        self.stat_pts = self.stat_font.render("pts: "+str(self.points), 0.5, BLACK)
+        self.image.blits(((self.stat_money, [52,0]),(self.stat_atk, [52, 12.5]), (self.stat_def, [52,25]), (self.stat_pts, [52,37.5])))
+
+    def get_budget(self):
+        money = int(input("Игрок "+str(self.id)+" бюджет("+str(self.money)+"): "))
+        if(self.money < money):
+            self.money_tospend = 0
+            print("Ты дурачок? У тебя столько денех нет даже!!")
         else:
-            self.image.fill(BLUE)
-            self.image.blit(self.textSurf, [50/2 - W/2, 50/2 - H/2])
+            self.money_tospend = money
+            self.money -= money
+
+    def distribute_budget(self):
+        deff = abs(int(input("Игрок "+str(self.id)+" в оборону("+str(self.money_tospend)+"):")))
+        atk =  abs(int(input("Игрок "+str(self.id)+" в атаку("+str(self.money_tospend-deff)+"):")))
+        if(self.money_tospend < deff+atk):
+            self.money += self.money_tospend
+            self.money_tospend = 0
+            self.defence += 0
+            self.attack += 0
+            print("Ты дурачок? У тебя столько денех нет даже!!")
+        else:
+            self.money_tospend = 0
+            self.defence += deff
+            self.attack += atk
 
 class cirlce(pygame.sprite.Sprite):
     def __init__(self):
@@ -118,9 +153,12 @@ for i in range(n):
         next_id = i+1
         is_last = False
 
-    centre = np.array([r*cos(np.deg2rad(angle)), r*sin(np.deg2rad(angle))]) + np.array([WIDTH//2, HEIGHT//2])
+    if i == 0: prev = n-1
+    else: prev = i-1
 
-    cities.append(pg_city(id=i, center=centre, money=l, next_id=next_id, prev_id=i-1, is_last=is_last))
+    centre = np.array([r*cos(np.deg2rad(angle)), r*sin(np.deg2rad(angle))]) + np.array([WIDTH//2, HEIGHT//2]) + np.array([75,0])
+
+    cities.append(pg_city(id=i, center=centre, money=l, next_id=next_id, prev_id=prev, is_last=is_last))
     sprites.add(cities[i])
     angle += ang
 
@@ -133,6 +171,7 @@ def pg_update():
     screen.fill(GrAY)
     sprites.draw(screen)
     pygame.display.flip()
+
 # Цикл игры
 running = True
 cyber_move = 1
@@ -150,38 +189,33 @@ while running:
             running = False
     pg_update()
     if cyber_move-1 != k*2:
-        text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move//2) 
-        if cyber_move % 2 != 0: text_goal.text = "Определение бюджета"
-        else: text_goal.text = "Распределение бюджета"
+        text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move//2)             
+
         cities[current].picked = True
         cities[previous].picked = False
         pg_update()
-
+        #ну смотри дружочек пирожочек какбэ | 1 ход - спрашиваем сколько бабок потратит на этот ход | 2 ход - куда потратит эти бабки 
         if cyber_move % 2 != 0:
-            money = int(input("Игрок "+str(current)+" расходы на "+str(cyber_move//2)+" раунд("+str(cities[current].money)+"):"))
-            if(cities[current].money < money):
-                cities[current].money_tospend = 0
-            else:
-                cities[current].money_tospend = money
-                cities[current].money -= money
+
+            text_goal.text = "Определение бюджета"
+            print("\n!Определение Бюджета!")
+            pg_update()
+
+            cities[current].get_budget()
     
         else:
-            deff = int(input("Игрок "+str(current)+" в оборону("+str(cities[current].money_tospend)+"):"))
-            atk =  int(input("Игрок "+str(current)+" в атаку("+str(cities[current].money_tospend-deff)+"):"))
-            if(cities[current].money_tospend < deff+atk):
-                cities[current].money += cities[current].money_tospend
-                cities[current].money_tospend = 0
-                cities[current].defence += 0
-                cities[current].attack += 0
-            else:
-                cities[current].defence += deff
-                cities[current].attack += atk
-        
+
+            text_goal.text = "Распределение бюджета"
+            print("\n!Распределение Бюджета!")
+            pg_update()
+
+            cities[current].distribute_budget()
+
         previous = current
         current = cities[current].next_id
 
         if current == 0:
-            if cyber_move % 2 ==0:
+            if cyber_move % 2 == 0:
                 for id in range(len(cities)):
                     prev = cities[id].prev_id
                     next = cities[id].next_id
@@ -201,6 +235,7 @@ while running:
                     print("Город", id, "защищается от", prev, cities[prev].attack, "-", cities[id].defence, "=", diff_def)
                     print("Город", id, "нападает на", next, cities[id].attack, "-", cities[next].defence, "=", diff_atk)
             cyber_move += 1
+
     else:
         text.text = "Ходы закончились"
 
