@@ -5,7 +5,7 @@ import numpy as np
 from math import *
 
 
-WIDTH = 800
+WIDTH = 1100
 HEIGHT = 800
 FPS = 30
 
@@ -103,7 +103,8 @@ clock = pygame.time.Clock()
 sprites = pygame.sprite.Group()
 circle_ = cirlce()
 text = main_text(500, 60, WIDTH/2, HEIGHT/3)
-sprites.add(circle_, text)
+text_goal = main_text(500,60, WIDTH/2, HEIGHT/3+60)
+sprites.add(circle_, text, text_goal)
 
 ang = 360 / n
 angle = 0
@@ -139,7 +140,6 @@ current = 0
 previous = -1
 
 
-
 while running:
     # Держим цикл на правильной скорости
     clock.tick(30)
@@ -149,34 +149,61 @@ while running:
         if event.type == pygame.QUIT:
             running = False
     pg_update()
-    if cyber_move-1 != k:
-        text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move) 
+    if cyber_move-1 != k*2:
+        text.text = "Ход игрока: "+str(current)+" ход: "+str(cyber_move//2) 
+        if cyber_move % 2 != 0: text_goal.text = "Определение бюджета"
+        else: text_goal.text = "Распределение бюджета"
         cities[current].picked = True
         cities[previous].picked = False
-
         pg_update()
 
-        cities[current].money_tospend = int(input("Игрок "+str(current)+" расходы на этот раунд:"))
-
-        cities[current].defence = int(input("Игрок "+str(current)+" в оборону:"))
-        cities[current].attack = int(input("Игрок "+str(current)+" в атаку:"))
-
-
+        if cyber_move % 2 != 0:
+            money = int(input("Игрок "+str(current)+" расходы на "+str(cyber_move//2)+" раунд("+str(cities[current].money)+"):"))
+            if(cities[current].money < money):
+                cities[current].money_tospend = 0
+            else:
+                cities[current].money_tospend = money
+                cities[current].money -= money
+    
+        else:
+            deff = int(input("Игрок "+str(current)+" в оборону("+str(cities[current].money_tospend)+"):"))
+            atk =  int(input("Игрок "+str(current)+" в атаку("+str(cities[current].money_tospend-deff)+"):"))
+            if(cities[current].money_tospend < deff+atk):
+                cities[current].money += cities[current].money_tospend
+                cities[current].money_tospend = 0
+                cities[current].defence += 0
+                cities[current].attack += 0
+            else:
+                cities[current].defence += deff
+                cities[current].attack += atk
+        
         previous = current
         current = cities[current].next_id
 
         if current == 0:
-            for id in range(len(cities)):
-                prev = cities[id].prev_id
-                next = cities[id].next_id
+            if cyber_move % 2 ==0:
+                for id in range(len(cities)):
+                    prev = cities[id].prev_id
+                    next = cities[id].next_id
 
+                    diff_atk = cities[id].attack - cities[next].defence
+                    if diff_atk > 0: cities[id].attack = diff_atk
+                    else:
+                        cities[id].attack = 0
+                        diff_atk = 0
+                    diff_def = cities[id].defence - cities[prev].attack
+                    if diff_def > 0:
+                        cities[id].defence = diff_def
+                        diff_def = 0
+                    else: cities[id].defence = 0
+
+                    cities[id].points += diff_atk + diff_def
+                    print("Город", id, "защищается от", prev, cities[prev].attack, "-", cities[id].defence, "=", diff_def)
+                    print("Город", id, "нападает на", next, cities[id].attack, "-", cities[next].defence, "=", diff_atk)
             cyber_move += 1
     else:
         text.text = "Ходы закончились"
 
     pg_update()
-
-
-
 
 pygame.quit()
